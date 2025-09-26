@@ -18,6 +18,7 @@ Interact with ChatGPT from a Chrome side panel and capture screenshots to includ
 1. In the side panel, click the gear icon or go to the extension's Options page.
 2. Paste your OpenAI API key (starts with `sk-...`).
 3. Save. The key is stored via `chrome.storage.local` in your browser.
+4. Optional: Enable Sync to keep your key available across devices using `chrome.storage.sync`. You can encrypt the synced copy with a passphrase. Use the same passphrase on all devices and click "Import from Sync" on a new device.
 
 ## Usage
 - Open side panel via toolbar icon or "Ctrl+Shift+Y" (macOS: "Cmd+Shift+Y").
@@ -31,5 +32,6 @@ Interact with ChatGPT from a Chrome side panel and capture screenshots to includ
 - `extension/options.html|css|js` — settings page for the OpenAI API key
 
 ## Notes
-- Screenshot capture uses `chrome.tabs.captureVisibleTab`. Granting `activeTab` permission allows capture of the current tab. Some pages (e.g., Chrome Web Store, chrome:// URLs) cannot be captured due to browser restrictions.
+- Screenshot capture uses a DOM-based renderer via a content script (`content/capture_dom.js`). The script is injected on demand if not present. Some pages (e.g., Chrome Web Store, `chrome://` URLs) cannot be captured due to browser restrictions.
+- If a page is restricted, the extension will offer a screen/window/tab picker using the browser's screen capture (`getDisplayMedia`) to let you capture the visible content instead.
 - API calls are made directly to `https://api.openai.com/v1/chat/completions` using model `gpt-4o-mini`. You can change the model in `sidepanel.js`.

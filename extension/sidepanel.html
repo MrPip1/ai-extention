@@ -11,6 +11,8 @@
       <header class="sp-header">
         <div class="sp-title">ChatGPT</div>
         <div class="sp-actions">
+          <button id="sleekToggleBtn" title="Toggle Sleek Mode">🕶️</button>
+          <button id="clearChatBtn" title="Clear chat">🗑️</button>
           <button id="screenshotBtn" title="Capture screenshot">📸</button>
           <button id="openOptionsBtn" title="Open settings">⚙️</button>
         </div>
@@ -27,6 +29,16 @@
         <div id="attachmentPreview" class="attachment hidden"></div>
         <textarea id="input" placeholder="Ask anything... (Shift+Enter for newline)" rows="2"></textarea>
         <div class="composer-actions">
+          <select id="captureMethod">
+            <option value="dom">DOM</option>
+            <option value="tab">Tab</option>
+            <option value="screen">Screen</option>
+          </select>
+          <select id="captureQuality">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
           <button id="sendBtn" class="primary">Send</button>
         </div>
       </footer>
