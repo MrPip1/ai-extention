@@ -170,10 +170,21 @@ async function onSend() {
 
 async function captureScreenshot() {
   try {
+    // Prefer DOM-based capture via content script
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    const tabId = tab && tab.id;
     const dataUrl = await new Promise((resolve, reject) => {
-      chrome.tabs.captureVisibleTab(undefined, { format: 'png' }, (res) => {
-        if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-        else resolve(res);
+      if (!tabId) return reject(new Error('No active tab'));
+      chrome.tabs.sendMessage(tabId, { type: 'CAPTURE_DOM_CANVAS' }, (res) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+          return;
+        }
+        if (!res || !res.ok) {
+          reject(new Error((res && res.error) || 'Capture failed'));
+          return;
+        }
+        resolve(res.dataUrl);
       });
     });
     state.pendingAttachment = { dataUrl, mime: 'image/png' };
