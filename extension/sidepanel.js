@@ -2,6 +2,7 @@ const messagesEl = document.getElementById('messages');
 const inputEl = document.getElementById('input');
 const sendBtn = document.getElementById('sendBtn');
 const screenshotBtn = document.getElementById('screenshotBtn');
+const sleekToggleBtn = document.getElementById('sleekToggleBtn');
 const openOptionsBtn = document.getElementById('openOptionsBtn');
 const bannerOpenOptionsBtn = document.getElementById('bannerOpenOptionsBtn');
 const apiKeyBannerEl = document.getElementById('apiKeyBanner');
@@ -12,6 +13,7 @@ let state = {
   messages: [],
   pendingAttachment: null, // { dataUrl, mime }
   isSending: false,
+  sleekMode: false,
 };
 
 function setBannerVisible(visible) {
@@ -79,7 +81,7 @@ function setSending(isSending) {
 }
 
 async function loadState() {
-  const stored = await chrome.storage.local.get({ openai_api_key: null, chat_history: [], sync_enabled: false });
+  const stored = await chrome.storage.local.get({ openai_api_key: null, chat_history: [], sync_enabled: false, sleek_mode: false });
   let apiKey = stored.openai_api_key;
   if (!apiKey && stored.sync_enabled) {
     // Auto-import plaintext key from sync if available
@@ -93,9 +95,11 @@ async function loadState() {
   }
   state.apiKey = apiKey;
   state.messages = Array.isArray(stored.chat_history) ? stored.chat_history : [];
+  state.sleekMode = !!stored.sleek_mode;
   setBannerVisible(!state.apiKey);
   setSending(false);
   renderMessages();
+  applySleekMode();
 }
 
 async function saveHistory() {
@@ -109,6 +113,32 @@ function buildUserContent(text, imageDataUrl) {
     { type: 'image_url', image_url: { url: imageDataUrl } },
   ];
 }
+
+function applySleekMode() {
+  if (state.sleekMode) {
+    document.body.classList.add('sleek');
+  } else {
+    document.body.classList.remove('sleek');
+  }
+}
+
+async function toggleSleekMode() {
+  state.sleekMode = !state.sleekMode;
+  applySleekMode();
+  await chrome.storage.local.set({ sleek_mode: state.sleekMode });
+}
+
+// Hold Space to temporarily reveal while pressed
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && state.sleekMode) {
+    document.body.classList.add('sleek-hold-reveal');
+  }
+});
+window.addEventListener('keyup', (e) => {
+  if (e.code === 'Space' && state.sleekMode) {
+    document.body.classList.remove('sleek-hold-reveal');
+  }
+});
 
 async function captureViaDisplayMedia() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
@@ -284,6 +314,7 @@ openOptionsBtn.addEventListener('click', () => chrome.runtime.openOptionsPage())
 bannerOpenOptionsBtn.addEventListener('click', () => chrome.runtime.openOptionsPage());
 sendBtn.addEventListener('click', onSend);
 screenshotBtn.addEventListener('click', captureScreenshot);
+sleekToggleBtn.addEventListener('click', toggleSleekMode);
 
 inputEl.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
@@ -299,6 +330,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
     state.apiKey = changes.openai_api_key.newValue || null;
     setBannerVisible(!state.apiKey);
     setSending(false);
+  }
+  if (changes.sleek_mode) {
+    state.sleekMode = !!changes.sleek_mode.newValue;
+    applySleekMode();
   }
 });
 
