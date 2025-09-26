@@ -170,39 +170,55 @@ async function onSend() {
 
 async function captureScreenshot() {
   try {
-    // Prefer DOM-based capture via content script
     const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-    const tabId = tab && tab.id;
-    const dataUrl = await new Promise((resolve, reject) => {
-      if (!tabId) return reject(new Error('No active tab'));
-      chrome.tabs.sendMessage(tabId, { type: 'CAPTURE_DOM_CANVAS' }, (res) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-          return;
-        }
-        if (!res || !res.ok) {
-          reject(new Error((res && res.error) || 'Capture failed'));
-          return;
-        }
-        resolve(res.dataUrl);
+    if (!tab || typeof tab.id !== 'number') throw new Error('No active tab');
+    const tabId = tab.id;
+    const url = tab.url || '';
+
+    // Block restricted schemes/hosts where content scripts cannot run
+    const restrictedScheme = /^(chrome:|chrome-devtools:|chrome-extension:)/i.test(url);
+    const restrictedHost = /(^|\.)chrome\.google\.com$/i.test(new URL(url).hostname || '') || /(^|\.)chromewebstore\.google\.com$/i.test(new URL(url).hostname || '');
+    if (restrictedScheme || restrictedHost) {
+      throw new Error('This page cannot be captured due to browser restrictions.');
+    }
+
+    async function trySendOnce() {
+      return await new Promise((resolve, reject) => {
+        chrome.tabs.sendMessage(tabId, { type: 'CAPTURE_DOM_CANVAS' }, (res) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+            return;
+          }
+          if (!res || !res.ok) {
+            reject(new Error((res && res.error) || 'Capture failed'));
+            return;
+          }
+          resolve(res.dataUrl);
+        });
       });
-    });
+    }
+
+    let dataUrl;
+    try {
+      // First try assuming the content script is already present
+      dataUrl = await trySendOnce();
+    } catch (_firstErr) {
+      // Inject content script on demand, then retry
+      try {
+        await chrome.scripting.executeScript({ target: { tabId }, files: ['content/capture_dom.js'] });
+        dataUrl = await trySendOnce();
+      } catch (injectErr) {
+        throw injectErr;
+      }
+    }
+
     state.pendingAttachment = { dataUrl, mime: 'image/png' };
     renderAttachmentPreview();
   } catch (err) {
-    // Fallback to browser-level visible tab capture
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-      const windowId = tab && tab.windowId;
-      const dataUrl = await chrome.tabs.captureVisibleTab(windowId, { format: 'png' });
-      state.pendingAttachment = { dataUrl, mime: 'image/png' };
-      renderAttachmentPreview();
-    } catch (fallbackErr) {
-      state.pendingAttachment = null;
-      renderAttachmentPreview();
-      state.messages.push({ role: 'assistant', text: `Screenshot failed: ${err.message}; fallback failed: ${fallbackErr.message}` });
-      renderMessages();
-    }
+    state.pendingAttachment = null;
+    renderAttachmentPreview();
+    state.messages.push({ role: 'assistant', text: `Screenshot failed: ${err && err.message ? err.message : String(err)}` });
+    renderMessages();
   }
 }
 

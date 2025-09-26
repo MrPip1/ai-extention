@@ -31,5 +31,5 @@ Interact with ChatGPT from a Chrome side panel and capture screenshots to includ
 - `extension/options.html|css|js` — settings page for the OpenAI API key
 
 ## Notes
-- Screenshot capture uses `chrome.tabs.captureVisibleTab`. Granting `activeTab` permission allows capture of the current tab. Some pages (e.g., Chrome Web Store, chrome:// URLs) cannot be captured due to browser restrictions.
+- Screenshot capture uses a DOM-based renderer via a content script (`content/capture_dom.js`). The script is injected on demand if not present. Some pages (e.g., Chrome Web Store, `chrome://` URLs) cannot be captured due to browser restrictions and will show a friendly error.
 - API calls are made directly to `https://api.openai.com/v1/chat/completions` using model `gpt-4o-mini`. You can change the model in `sidepanel.js`.
