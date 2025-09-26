@@ -190,10 +190,19 @@ async function captureScreenshot() {
     state.pendingAttachment = { dataUrl, mime: 'image/png' };
     renderAttachmentPreview();
   } catch (err) {
-    state.pendingAttachment = null;
-    renderAttachmentPreview();
-    state.messages.push({ role: 'assistant', text: `Screenshot failed: ${err.message}` });
-    renderMessages();
+    // Fallback to browser-level visible tab capture
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      const windowId = tab && tab.windowId;
+      const dataUrl = await chrome.tabs.captureVisibleTab(windowId, { format: 'png' });
+      state.pendingAttachment = { dataUrl, mime: 'image/png' };
+      renderAttachmentPreview();
+    } catch (fallbackErr) {
+      state.pendingAttachment = null;
+      renderAttachmentPreview();
+      state.messages.push({ role: 'assistant', text: `Screenshot failed: ${err.message}; fallback failed: ${fallbackErr.message}` });
+      renderMessages();
+    }
   }
 }
 
