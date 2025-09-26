@@ -7,7 +7,6 @@ const openOptionsBtn = document.getElementById('openOptionsBtn');
 const bannerOpenOptionsBtn = document.getElementById('bannerOpenOptionsBtn');
 const apiKeyBannerEl = document.getElementById('apiKeyBanner');
 const attachmentPreviewEl = document.getElementById('attachmentPreview');
-const cloakTabEl = document.getElementById('cloakTab');
 
 let state = {
   apiKey: null,
@@ -15,7 +14,6 @@ let state = {
   pendingAttachment: null, // { dataUrl, mime }
   isSending: false,
   sleekMode: false,
-  cloakHidden: false,
 };
 
 function setBannerVisible(visible) {
@@ -83,7 +81,7 @@ function setSending(isSending) {
 }
 
 async function loadState() {
-  const stored = await chrome.storage.local.get({ openai_api_key: null, chat_history: [], sync_enabled: false, sleek_mode: false, cloak_hidden: false });
+  const stored = await chrome.storage.local.get({ openai_api_key: null, chat_history: [], sync_enabled: false, sleek_mode: false });
   let apiKey = stored.openai_api_key;
   if (!apiKey && stored.sync_enabled) {
     // Auto-import plaintext key from sync if available
@@ -98,12 +96,10 @@ async function loadState() {
   state.apiKey = apiKey;
   state.messages = Array.isArray(stored.chat_history) ? stored.chat_history : [];
   state.sleekMode = !!stored.sleek_mode;
-  state.cloakHidden = !!stored.cloak_hidden;
   setBannerVisible(!state.apiKey);
   setSending(false);
   renderMessages();
   applySleekMode();
-  applyCloak();
 }
 
 async function saveHistory() {
@@ -126,52 +122,7 @@ function applySleekMode() {
   }
 }
 
-function applyCloak() {
-  const body = document.body;
-  body.classList.toggle('cloak-hidden', state.cloakHidden);
-}
-
-async function toggleCloakHidden() {
-  state.cloakHidden = !state.cloakHidden;
-  applyCloak();
-  await chrome.storage.local.set({ cloak_hidden: state.cloakHidden });
-}
-
-function bindCloakEvents() {
-  if (!cloakTabEl) return;
-  let revealHeld = false;
-  let holdTimer = null;
-  const startReveal = () => {
-    revealHeld = true;
-    document.body.classList.add('cloak-reveal');
-  };
-  const stopReveal = () => {
-    revealHeld = false;
-    document.body.classList.remove('cloak-reveal');
-  };
-  cloakTabEl.addEventListener('mousedown', (e) => {
-    e.preventDefault();
-    holdTimer = setTimeout(startReveal, 100);
-  });
-  window.addEventListener('mouseup', () => {
-    if (holdTimer) clearTimeout(holdTimer);
-    stopReveal();
-  });
-  cloakTabEl.addEventListener('click', (e) => {
-    // Short click toggles cloaked state
-    toggleCloakHidden();
-  });
-  window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && state.cloakHidden) {
-      startReveal();
-    }
-  });
-  window.addEventListener('keyup', (e) => {
-    if (e.code === 'Space' && state.cloakHidden) {
-      stopReveal();
-    }
-  });
-}
+// removed cloak helpers
 
 async function toggleSleekMode() {
   state.sleekMode = !state.sleekMode;
@@ -366,7 +317,6 @@ bannerOpenOptionsBtn.addEventListener('click', () => chrome.runtime.openOptionsP
 sendBtn.addEventListener('click', onSend);
 screenshotBtn.addEventListener('click', captureScreenshot);
 sleekToggleBtn.addEventListener('click', toggleSleekMode);
-bindCloakEvents();
 
 inputEl.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
