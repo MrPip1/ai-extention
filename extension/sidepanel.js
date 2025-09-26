@@ -3,6 +3,7 @@ const inputEl = document.getElementById('input');
 const sendBtn = document.getElementById('sendBtn');
 const screenshotBtn = document.getElementById('screenshotBtn');
 const sleekToggleBtn = document.getElementById('sleekToggleBtn');
+const clearChatBtn = document.getElementById('clearChatBtn');
 const openOptionsBtn = document.getElementById('openOptionsBtn');
 const bannerOpenOptionsBtn = document.getElementById('bannerOpenOptionsBtn');
 const apiKeyBannerEl = document.getElementById('apiKeyBanner');
@@ -109,6 +110,14 @@ async function loadState() {
 
 async function saveHistory() {
   await chrome.storage.local.set({ chat_history: state.messages });
+}
+
+async function clearHistory() {
+  const ok = confirm('Clear chat history? This cannot be undone.');
+  if (!ok) return;
+  state.messages = [];
+  renderMessages();
+  await saveHistory();
 }
 
 function buildUserContent(text, imageDataUrl) {
@@ -352,6 +361,7 @@ bannerOpenOptionsBtn.addEventListener('click', () => chrome.runtime.openOptionsP
 sendBtn.addEventListener('click', onSend);
 screenshotBtn.addEventListener('click', captureScreenshot);
 sleekToggleBtn.addEventListener('click', toggleSleekMode);
+clearChatBtn.addEventListener('click', clearHistory);
 
 inputEl.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
