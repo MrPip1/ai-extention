@@ -79,8 +79,19 @@ function setSending(isSending) {
 }
 
 async function loadState() {
-  const stored = await chrome.storage.local.get({ openai_api_key: null, chat_history: [] });
-  state.apiKey = stored.openai_api_key;
+  const stored = await chrome.storage.local.get({ openai_api_key: null, chat_history: [], sync_enabled: false });
+  let apiKey = stored.openai_api_key;
+  if (!apiKey && stored.sync_enabled) {
+    // Auto-import plaintext key from sync if available
+    try {
+      const { openai_api_key_sync } = await chrome.storage.sync.get({ openai_api_key_sync: null });
+      if (typeof openai_api_key_sync === 'string' && openai_api_key_sync) {
+        apiKey = openai_api_key_sync;
+        await chrome.storage.local.set({ openai_api_key: apiKey });
+      }
+    } catch (_e) {}
+  }
+  state.apiKey = apiKey;
   state.messages = Array.isArray(stored.chat_history) ? stored.chat_history : [];
   setBannerVisible(!state.apiKey);
   setSending(false);

@@ -18,6 +18,7 @@ Interact with ChatGPT from a Chrome side panel and capture screenshots to includ
 1. In the side panel, click the gear icon or go to the extension's Options page.
 2. Paste your OpenAI API key (starts with `sk-...`).
 3. Save. The key is stored via `chrome.storage.local` in your browser.
+4. Optional: Enable Sync to keep your key available across devices using `chrome.storage.sync`. You can encrypt the synced copy with a passphrase. Use the same passphrase on all devices and click "Import from Sync" on a new device.
 
 ## Usage
 - Open side panel via toolbar icon or "Ctrl+Shift+Y" (macOS: "Cmd+Shift+Y").

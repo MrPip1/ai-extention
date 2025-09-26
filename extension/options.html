@@ -13,11 +13,23 @@
         <span>OpenAI API Key</span>
         <input id="apiKey" type="password" placeholder="sk-..." />
       </label>
+      <label class="field">
+        <span><input id="syncEnabled" type="checkbox" /> Enable Sync Across Devices</span>
+      </label>
+      <label class="field" id="encryptRow" style="display:none;">
+        <span><input id="encryptEnabled" type="checkbox" /> Encrypt with passphrase</span>
+      </label>
+      <label class="field" id="passRow" style="display:none;">
+        <span>Passphrase (for encryption/decryption)</span>
+        <input id="passphrase" type="password" placeholder="Enter passphrase" />
+      </label>
       <div class="actions">
         <button id="saveBtn">Save</button>
         <button id="clearBtn" class="secondary">Clear</button>
+        <button id="importBtn" class="secondary">Import from Sync</button>
       </div>
       <p class="hint">Your key is stored locally via chrome.storage and never leaves your browser except requests sent directly to OpenAI.</p>
+      <p class="hint">If Sync is enabled, a copy is stored in chrome.storage.sync. You can optionally encrypt it with a passphrase. Use the same passphrase on all devices.</p>
     </div>
     <script src="options.js" type="module"></script>
   </body>
