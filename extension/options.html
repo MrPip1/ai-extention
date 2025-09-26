@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ChatGPT Extension Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Settings</h1>
+      <label class="field">
+        <span>OpenAI API Key</span>
+        <input id="apiKey" type="password" placeholder="sk-..." />
+      </label>
+      <div class="actions">
+        <button id="saveBtn">Save</button>
+        <button id="clearBtn" class="secondary">Clear</button>
+      </div>
+      <p class="hint">Your key is stored locally via chrome.storage and never leaves your browser except requests sent directly to OpenAI.</p>
+    </div>
+    <script src="options.js" type="module"></script>
+  </body>
+  </html>
+
