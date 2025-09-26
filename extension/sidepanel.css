@@ -68,6 +68,7 @@ body {
 .composer #attachmentPreview { grid-column: 1 / -1; }
 .composer textarea { width: 100%; resize: none; background: #0f0f12; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; min-height: 40px; }
 .composer .composer-actions { display: flex; align-items: center; gap: 8px; }
+.composer .composer-actions select { background: #0f0f12; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; }
 .composer button.primary { background: var(--primary); border: none; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
 .composer button.primary:disabled { opacity: 0.6; cursor: not-allowed; }
 

@@ -2,9 +2,13 @@
 // using an SVG foreignObject technique. This is a best-effort capture and may
 // not perfectly render cross-origin images or videos without CORS allowances.
 
-async function captureDomAsDataUrl() {
-  const width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-  const height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+async function captureDomAsDataUrl(maxWidth, jpegQuality) {
+  const viewportW = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+  const viewportH = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+  const targetMaxW = typeof maxWidth === 'number' && maxWidth > 0 ? maxWidth : viewportW;
+  const scale = Math.min(1, targetMaxW / viewportW);
+  const width = Math.max(1, Math.round(viewportW * scale));
+  const height = Math.max(1, Math.round(viewportH * scale));
 
   const cloned = document.documentElement.cloneNode(true);
 
@@ -41,7 +45,8 @@ async function captureDomAsDataUrl() {
     canvas.height = height;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0);
-    const dataUrl = canvas.toDataURL('image/png');
+    const quality = typeof jpegQuality === 'number' ? Math.max(0.3, Math.min(0.95, jpegQuality)) : 0.7;
+    const dataUrl = canvas.toDataURL('image/jpeg', quality);
     return dataUrl;
   } finally {
     URL.revokeObjectURL(url);
@@ -52,7 +57,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (!message || message.type !== 'CAPTURE_DOM_CANVAS') return;
   (async () => {
     try {
-      const dataUrl = await captureDomAsDataUrl();
+      const dataUrl = await captureDomAsDataUrl(message && message.maxWidth, message && message.jpegQuality);
       sendResponse({ ok: true, dataUrl });
     } catch (err) {
       sendResponse({ ok: false, error: err && err.message ? err.message : String(err) });

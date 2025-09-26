@@ -7,6 +7,8 @@ const openOptionsBtn = document.getElementById('openOptionsBtn');
 const bannerOpenOptionsBtn = document.getElementById('bannerOpenOptionsBtn');
 const apiKeyBannerEl = document.getElementById('apiKeyBanner');
 const attachmentPreviewEl = document.getElementById('attachmentPreview');
+const captureMethodEl = document.getElementById('captureMethod');
+const captureQualityEl = document.getElementById('captureQuality');
 
 let state = {
   apiKey: null,
@@ -81,7 +83,7 @@ function setSending(isSending) {
 }
 
 async function loadState() {
-  const stored = await chrome.storage.local.get({ openai_api_key: null, chat_history: [], sync_enabled: false, sleek_mode: false });
+  const stored = await chrome.storage.local.get({ openai_api_key: null, chat_history: [], sync_enabled: false, sleek_mode: false, capture_method: 'dom', capture_quality: 'medium' });
   let apiKey = stored.openai_api_key;
   if (!apiKey && stored.sync_enabled) {
     // Auto-import plaintext key from sync if available
@@ -100,6 +102,9 @@ async function loadState() {
   setSending(false);
   renderMessages();
   applySleekMode();
+  // init capture prefs
+  if (captureMethodEl) captureMethodEl.value = stored.capture_method || 'dom';
+  if (captureQualityEl) captureQualityEl.value = stored.capture_quality || 'medium';
 }
 
 async function saveHistory() {
@@ -256,17 +261,23 @@ async function captureScreenshot() {
     if (!tab || typeof tab.id !== 'number') throw new Error('No active tab');
     const tabId = tab.id;
     const url = tab.url || '';
+    const method = (captureMethodEl && captureMethodEl.value) || 'dom';
+    const quality = (captureQualityEl && captureQualityEl.value) || 'medium';
+    const qualityToParams = {
+      low: { maxWidth: 960, jpegQuality: 0.55 },
+      medium: { maxWidth: 1280, jpegQuality: 0.7 },
+      high: { maxWidth: 1600, jpegQuality: 0.85 },
+    };
+    const params = qualityToParams[quality] || qualityToParams.medium;
 
     // Block restricted schemes/hosts where content scripts cannot run
     const restrictedScheme = /^(chrome:|chrome-devtools:|chrome-extension:)/i.test(url);
     const restrictedHost = /(^|\.)chrome\.google\.com$/i.test(new URL(url).hostname || '') || /(^|\.)chromewebstore\.google\.com$/i.test(new URL(url).hostname || '');
-    if (restrictedScheme || restrictedHost) {
-      throw new Error('This page cannot be captured due to browser restrictions.');
-    }
+    const isRestricted = restrictedScheme || restrictedHost;
 
     async function trySendOnce() {
       return await new Promise((resolve, reject) => {
-        chrome.tabs.sendMessage(tabId, { type: 'CAPTURE_DOM_CANVAS' }, (res) => {
+        chrome.tabs.sendMessage(tabId, { type: 'CAPTURE_DOM_CANVAS', maxWidth: params.maxWidth, jpegQuality: params.jpegQuality }, (res) => {
           if (chrome.runtime.lastError) {
             reject(chrome.runtime.lastError);
             return;
@@ -281,35 +292,59 @@ async function captureScreenshot() {
     }
 
     let dataUrl;
-    try {
-      // First try assuming the content script is already present
-      dataUrl = await trySendOnce();
-    } catch (_firstErr) {
-      // Inject content script on demand, then retry
+    if (method === 'dom') {
+      if (isRestricted) throw new Error('This page cannot be captured due to browser restrictions.');
       try {
+        // First try assuming the content script is already present
+        dataUrl = await trySendOnce();
+      } catch (_firstErr) {
+        // Inject content script on demand, then retry
         await chrome.scripting.executeScript({ target: { tabId }, files: ['content/capture_dom.js'] });
         dataUrl = await trySendOnce();
-      } catch (injectErr) {
-        throw injectErr;
       }
+    } else if (method === 'tab') {
+      // Built-in tab capture, then downscale+JPEG to reduce memory
+      const windowId = tab && tab.windowId;
+      const pngUrl = await chrome.tabs.captureVisibleTab(windowId, { format: 'png' });
+      dataUrl = await downscaleDataUrl(pngUrl, params.maxWidth, params.jpegQuality);
+    } else {
+      // screen method
+      const pngUrl = await captureViaDisplayMedia();
+      dataUrl = await downscaleDataUrl(pngUrl, params.maxWidth, params.jpegQuality);
     }
 
     state.pendingAttachment = { dataUrl, mime: 'image/png' };
     renderAttachmentPreview();
   } catch (err) {
-    // As a final fallback (works on restricted pages), prompt for screen/window/tab capture
-    try {
-      const dataUrl = await captureViaDisplayMedia();
-      state.pendingAttachment = { dataUrl, mime: 'image/png' };
-      renderAttachmentPreview();
-      return;
-    } catch (fallbackErr) {
-      state.pendingAttachment = null;
-      renderAttachmentPreview();
-      state.messages.push({ role: 'assistant', text: `Screenshot failed: ${err && err.message ? err.message : String(err)}; screen capture failed: ${fallbackErr && fallbackErr.message ? fallbackErr.message : String(fallbackErr)}` });
-      renderMessages();
-    }
+    state.pendingAttachment = null;
+    renderAttachmentPreview();
+    state.messages.push({ role: 'assistant', text: `Screenshot failed: ${err && err.message ? err.message : String(err)}` });
+    renderMessages();
   }
+}
+
+async function downscaleDataUrl(srcDataUrl, maxWidth, jpegQuality) {
+  return await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, (maxWidth || 1280) / img.width);
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        const q = typeof jpegQuality === 'number' ? Math.max(0.3, Math.min(0.95, jpegQuality)) : 0.7;
+        resolve(canvas.toDataURL('image/jpeg', q));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = () => reject(new Error('Downscale failed'));
+    img.src = srcDataUrl;
+  });
 }
 
 openOptionsBtn.addEventListener('click', () => chrome.runtime.openOptionsPage());
