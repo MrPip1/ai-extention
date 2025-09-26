@@ -99,6 +99,45 @@ function buildUserContent(text, imageDataUrl) {
   ];
 }
 
+async function captureViaDisplayMedia() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+    throw new Error('Screen capture API unavailable in this context.');
+  }
+  const stream = await navigator.mediaDevices.getDisplayMedia({
+    video: { frameRate: 1 },
+    audio: false,
+  });
+  try {
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    video.muted = true;
+    video.playsInline = true;
+    await new Promise((resolve, reject) => {
+      const cleanup = () => {
+        video.onloadedmetadata = null;
+        video.oncanplay = null;
+        video.onerror = null;
+      };
+      video.onloadedmetadata = () => {
+        video.play().then(() => resolve()).catch(reject);
+      };
+      video.oncanplay = () => resolve();
+      video.onerror = () => reject(new Error('Screen capture video error'));
+    });
+    const width = video.videoWidth || 1280;
+    const height = video.videoHeight || 720;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, width, height);
+    const dataUrl = canvas.toDataURL('image/png');
+    return dataUrl;
+  } finally {
+    stream.getTracks().forEach((t) => t.stop());
+  }
+}
+
 async function callOpenAI(userContent) {
   const body = {
     model: 'gpt-4o-mini',
@@ -215,10 +254,18 @@ async function captureScreenshot() {
     state.pendingAttachment = { dataUrl, mime: 'image/png' };
     renderAttachmentPreview();
   } catch (err) {
-    state.pendingAttachment = null;
-    renderAttachmentPreview();
-    state.messages.push({ role: 'assistant', text: `Screenshot failed: ${err && err.message ? err.message : String(err)}` });
-    renderMessages();
+    // As a final fallback (works on restricted pages), prompt for screen/window/tab capture
+    try {
+      const dataUrl = await captureViaDisplayMedia();
+      state.pendingAttachment = { dataUrl, mime: 'image/png' };
+      renderAttachmentPreview();
+      return;
+    } catch (fallbackErr) {
+      state.pendingAttachment = null;
+      renderAttachmentPreview();
+      state.messages.push({ role: 'assistant', text: `Screenshot failed: ${err && err.message ? err.message : String(err)}; screen capture failed: ${fallbackErr && fallbackErr.message ? fallbackErr.message : String(fallbackErr)}` });
+      renderMessages();
+    }
   }
 }
 
