@@ -1,31 +1,25 @@
 :root {
-  --bg: #0c0f12;
-  --bg-elev: #11161b;
-  --text: #e8ecf1;
-  --muted: #9aa3b2;
-  --border: #1e2630;
+  --bg: #0b0b0c;
+  --bg-elev: #121214;
+  --text: #e7e7ea;
+  --muted: #a3a3ad;
+  --border: #26262b;
   --primary: #10a37f;
-  --shadow: 0 1px 2px rgba(0,0,0,0.25), 0 6px 18px rgba(0,0,0,0.25);
 }
 
 html, body { height: 100%; }
 body {
   margin: 0;
-  background: radial-gradient(1200px 600px at 50% -10%, #11161b 0%, #0c0f12 55%, #0b0d10 100%);
+  background: var(--bg);
   color: var(--text);
-  font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
-.wrap { max-width: 720px; margin: 48px auto; padding: 0 20px; }
-h1 { margin: 0 0 18px; letter-spacing: 0.2px; }
-.field { display: grid; gap: 6px; margin-bottom: 14px; }
-input { background: #0f1318; color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; outline: none; transition: border-color .2s ease, box-shadow .2s ease; }
-input:focus { border-color: #2a3543; box-shadow: 0 0 0 3px rgba(16,163,127,0.15); }
-.actions { display: flex; gap: 10px; }
-button { background: var(--primary); color: white; border: 1px solid rgba(0,0,0,0.2); border-radius: 10px; padding: 10px 14px; cursor: pointer; box-shadow: var(--shadow); transition: filter .15s ease, transform .08s ease; }
-button:hover { filter: brightness(1.05); }
-button:active { transform: translateY(1px); }
-button.secondary { background: rgba(255,255,255,0.03); color: var(--text); border: 1px solid var(--border); box-shadow: none; }
+.wrap { max-width: 640px; margin: 40px auto; padding: 0 16px; }
+h1 { margin: 0 0 16px; }
+.field { display: grid; gap: 6px; margin-bottom: 12px; }
+input { background: #0f0f12; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.actions { display: flex; gap: 8px; }
+button { background: var(--primary); color: white; border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
 .hint { color: var(--muted); font-size: 12px; margin-top: 12px; }
 
