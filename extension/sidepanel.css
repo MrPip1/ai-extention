@@ -75,3 +75,24 @@ body {
 .attachment img { max-width: 120px; border: 1px solid var(--border); border-radius: 8px; }
 .attachment .remove { background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; cursor: pointer; }
 
+.cloak-tab {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 80px;
+  border-radius: 8px 0 0 8px;
+  background: #0e0e11;
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  opacity: 0.4;
+}
+.cloak-tab:hover { opacity: 0.8; }
+
+.cloak-hidden #app { opacity: 0; pointer-events: none; }
+.cloak-hidden .cloak-tab { opacity: 0.2; }
+.cloak-reveal #app { opacity: 1; pointer-events: auto; }
+
