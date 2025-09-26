@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ChatGPT Side Panel</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="sp-header">
+        <div class="sp-title">ChatGPT</div>
+        <div class="sp-actions">
+          <button id="screenshotBtn" title="Capture screenshot">📸</button>
+          <button id="openOptionsBtn" title="Open settings">⚙️</button>
+        </div>
+      </header>
+
+      <section id="apiKeyBanner" class="banner hidden">
+        <div>Set your OpenAI API key in Settings to start chatting.</div>
+        <button id="bannerOpenOptionsBtn">Open Settings</button>
+      </section>
+
+      <main id="messages" class="messages" role="log" aria-live="polite"></main>
+
+      <footer class="composer">
+        <div id="attachmentPreview" class="attachment hidden"></div>
+        <textarea id="input" placeholder="Ask anything... (Shift+Enter for newline)" rows="2"></textarea>
+        <div class="composer-actions">
+          <button id="sendBtn" class="primary">Send</button>
+        </div>
+      </footer>
+    </div>
+    <script src="sidepanel.js" type="module"></script>
+  </body>
+  </html>
+

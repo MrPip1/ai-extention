@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "ChatGPT Side Panel + Screenshots",
+  "description": "Talk to ChatGPT in a side panel and capture screenshots of the current tab.",
+  "version": "0.1.0",
+  "permissions": [
+    "storage",
+    "tabs",
+    "sidePanel",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://api.openai.com/*"
+  ],
+  "background": {
+    "service_worker": "service_worker.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "Open ChatGPT Side Panel"
+  },
+  "options_page": "options.html",
+  "commands": {
+    "open-side-panel": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Open ChatGPT side panel"
+    }
+  }
+}
